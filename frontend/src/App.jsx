@@ -3,11 +3,13 @@ import AdviceTab from './components/AdviceTab'
 import EquityTab from './components/EquityTab'
 import LessonsTab from './components/LessonsTab'
 import PracticeTab from './components/PracticeTab'
+import PreflopTab from './components/PreflopTab'
 
 const TABS = [
+  { id: 'preflop', label: '🃏 Preflop' },
   { id: 'advice', label: '🎯 Real-Time Advice' },
   { id: 'equity', label: '📊 Equity Calc' },
-  { id: 'practice', label: '🃏 Practice' },
+  { id: 'practice', label: '🎲 Practice' },
   { id: 'lessons', label: '📚 Lessons' },
 ]
 
@@ -41,6 +43,7 @@ export default function App() {
       </nav>
 
       <main className="max-w-5xl mx-auto p-4">
+        {tab === 'preflop' && <PreflopTab />}
         {tab === 'advice' && <AdviceTab />}
         {tab === 'equity' && <EquityTab />}
         {tab === 'practice' && <PracticeTab />}
