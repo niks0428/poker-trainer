@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.pyc
+backend/api_key.txt
+frontend/node_modules/
+frontend/dist/
+*.log
+.env
