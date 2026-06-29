@@ -108,6 +108,99 @@ async def get_lesson(req: LessonRequest):
     return {"content": msg.content[0].text}
 
 
+class ScenarioRequest(BaseModel):
+    difficulty: str = "medium"   # easy | medium | hard
+    topic: str = "any"           # preflop | postflop | bluffing | value | any
+
+
+class ScenarioAnswerRequest(BaseModel):
+    scenario: dict
+    chosen_action: str
+
+
+SCENARIO_GEN_SYSTEM = """You are a world-class poker coach generating training scenarios for No-Limit Texas Hold'em.
+Generate a realistic hand scenario and respond with valid JSON only, in this exact structure:
+{
+  "title": "short scenario title",
+  "hole_cards": ["Xr", "Xs"],
+  "board_cards": ["Xr", "Xs", "Xr"],
+  "position": "BTN|CO|MP|UTG|SB|BB",
+  "street": "preflop|flop|turn|river",
+  "pot_size": 25,
+  "stack_size": 200,
+  "bet_to_call": 15,
+  "num_opponents": 1,
+  "context": "1-2 sentence description of what has happened so far",
+  "correct_action": "fold|call|raise|check",
+  "correct_sizing": "e.g. 2x pot or check",
+  "explanation": "2-3 sentence GTO explanation of the correct play",
+  "trap": "what most players do wrong here and why it's a mistake"
+}
+Use real card notation: ranks A K Q J T 9 8 7 6 5 4 3 2, suits s h d c.
+Make scenarios realistic and instructive. Vary street, position, and situation."""
+
+SCENARIO_EVAL_SYSTEM = """You are a poker coach evaluating a student's decision.
+Given a scenario and the student's chosen action vs the correct action, give feedback.
+Respond in JSON:
+{
+  "correct": true|false,
+  "grade": "Excellent|Good|Okay|Wrong",
+  "feedback": "2-3 sentences of specific coaching feedback",
+  "ev_impact": "estimated EV impact e.g. +$2.50 per hand or -$8 per hand"
+}"""
+
+
+@app.post("/scenario/generate")
+async def generate_scenario(req: ScenarioRequest):
+    client = get_client()
+    prompt = f"Generate a {req.difficulty} difficulty poker training scenario"
+    if req.topic != "any":
+        prompt += f" focused on {req.topic} decisions"
+    prompt += ". Respond with JSON only."
+
+    msg = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=700,
+        system=SCENARIO_GEN_SYSTEM,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    text = msg.content[0].text.strip()
+    try:
+        data = json.loads(text)
+    except Exception:
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        data = json.loads(text[start:end])
+    return data
+
+
+@app.post("/scenario/evaluate")
+async def evaluate_answer(req: ScenarioAnswerRequest):
+    client = get_client()
+    s = req.scenario
+    prompt = f"""Scenario: {s.get('context', '')}
+Hand: {' '.join(s.get('hole_cards', []))} | Board: {' '.join(s.get('board_cards', []))}
+Position: {s.get('position')} | Pot: ${s.get('pot_size')} | Bet to call: ${s.get('bet_to_call')}
+Correct action: {s.get('correct_action')} ({s.get('correct_sizing','')})
+Student chose: {req.chosen_action}
+Evaluate and respond with JSON only."""
+
+    msg = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=300,
+        system=SCENARIO_EVAL_SYSTEM,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    text = msg.content[0].text.strip()
+    try:
+        data = json.loads(text)
+    except Exception:
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        data = json.loads(text[start:end])
+    return data
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}

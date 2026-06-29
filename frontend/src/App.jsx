@@ -2,10 +2,12 @@ import { useState } from 'react'
 import AdviceTab from './components/AdviceTab'
 import EquityTab from './components/EquityTab'
 import LessonsTab from './components/LessonsTab'
+import PracticeTab from './components/PracticeTab'
 
 const TABS = [
   { id: 'advice', label: '🎯 Real-Time Advice' },
   { id: 'equity', label: '📊 Equity Calc' },
+  { id: 'practice', label: '🃏 Practice' },
   { id: 'lessons', label: '📚 Lessons' },
 ]
 
@@ -41,6 +43,7 @@ export default function App() {
       <main className="max-w-5xl mx-auto p-4">
         {tab === 'advice' && <AdviceTab />}
         {tab === 'equity' && <EquityTab />}
+        {tab === 'practice' && <PracticeTab />}
         {tab === 'lessons' && <LessonsTab />}
       </main>
     </div>

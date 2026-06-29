@@ -1,0 +1,13 @@
+[Unit]
+Description=Poker Trainer Backend
+After=network.target
+
+[Service]
+User=vladthelad
+WorkingDirectory=/home/vladthelad/poker_trainer
+ExecStart=/home/vladthelad/poker_trainer/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 5700
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
